@@ -2,16 +2,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 
 const BEARER_TOKEN = process.env.NEXT_PUBLIC_TWITTER_BEARER;
-const URL = `http://api.twitter.com/1.1/users/show.json`;
+const URL = `https://api.twitter.com/2/users/`;
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const user_id = req.body.user_id ?? req.query.user_id;
-  const screen_name = req.body.screen_name ?? req.query.screen_name;
-  const params: any = { user_id };
-
-  if(screen_name){
-    params.screen_name = screen_name
-  }
+  const tweet_id = req.body.tweet_id ?? req.query.tweet_id;
 
   if (!user_id || !user_id.trim()) {
     res.json({
@@ -23,23 +18,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    const result = await axios.get(URL, {
-      params,
+    const result = await axios.get(URL + user_id + "/liked_tweets", {
       headers: {
         authorization: `Bearer ${BEARER_TOKEN}`,
       },
     });
-
-    const { screen_name, name, followers_count, friends_count } = result.data;
+    const filtered = result.data.data.filter((data: any) => data.id === tweet_id);
 
     res.json({
       status: "ok",
-      data: {
-        followers: followers_count,
-        following: friends_count,
-        screen_name,
-        name,
-      },
+      data: filtered.length > 0,
     });
   } catch (error: any) {
     console.log(error);

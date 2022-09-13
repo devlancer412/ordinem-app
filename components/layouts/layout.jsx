@@ -20,6 +20,7 @@ export const Layout = ({ children }) => {
     if (wallet && wallet.publicKey) {
       (async () => {
         const publicKey = wallet.publicKey.toString();
+        setNfts(null);
 
         const user = await getUserFromAddress(publicKey);
         if (!user) {
@@ -29,8 +30,11 @@ export const Layout = ({ children }) => {
         }
 
         const solanaClient = new SolanaClient();
+        await solanaClient.getGoldTokens(publicKey);
+        
         const nfts = await solanaClient.getAllNfts(publicKey);
         setNfts(nfts);
+
       })();
     }
   }, [wallet]);

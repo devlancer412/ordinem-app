@@ -1,3 +1,4 @@
+import { NETWORK } from "./constants";
 import { useTwitterUser } from "hooks/useTwitterUser";
 import { initializeApp } from "firebase/app";
 import {
@@ -20,6 +21,9 @@ import {
   signOut,
 } from "firebase/auth";
 import { useAlert } from "hooks/useAlert";
+import SolanaClient from "./solanaClient";
+import axios from "axios";
+import { differenceInDays, isYesterday } from "date-fns";
 
 const provider = new TwitterAuthProvider();
 
@@ -41,8 +45,8 @@ export const userCollection = collection(db, "users");
 export const nftCollection = collection(db, "nfts");
 
 const auth = getAuth();
-const { open } = useAlert.getState();
-const { removeUser, changeUser } = useTwitterUser.getState();
+const { open: openAlert } = useAlert.getState();
+const { removeUser, changeUser, currentUser } = useTwitterUser.getState();
 
 export async function logoutFromTwitter() {
   await signOut(auth);
@@ -59,14 +63,23 @@ export async function signInWithTwitterFirebase(address?: string) {
     const q = query(userCollection, where("uid", "==", user.uid));
     const docs = await getDocs(q);
     if (docs.docs.length === 0) {
-      const { uid, email, photoURL: image, displayName } = user;
+      const {
+        email,
+        photoURL: image,
+        displayName,
+        providerData,
+        uid: user_id,
+      } = user;
+      const { uid } = providerData[0];
       await addDoc(userCollection, {
         uid,
+        user_id,
         email,
         image,
         displayName,
         screenName: (user as any)?.reloadUserInfo.screenName,
         wallet: address ?? "",
+        hasNfts: false,
       });
     } else if (address != undefined) {
       const userDoc = docs.docs[0];
@@ -74,7 +87,7 @@ export async function signInWithTwitterFirebase(address?: string) {
       console.log(user);
 
       if (user.wallet.length === 0) {
-        await updateDoc(doc(db, "users", userDoc.id), {
+        await updateUser(userDoc.id, {
           wallet: address,
         });
         changeUser(address);
@@ -85,7 +98,7 @@ export async function signInWithTwitterFirebase(address?: string) {
     }
   } catch (error) {
     console.log(error);
-    open({
+    openAlert({
       message: error as string,
       status: "error",
     });
@@ -135,26 +148,143 @@ export async function setTwitterDataToNft(publicKey: string, mint: string) {
   });
 }
 
+export async function getUserData(uid: string) {
+  return getData(
+    await getDocs(query(userCollection, where("uid", "==", uid)))
+  )[0];
+}
 export async function getCurrentUserData() {
   return getData(
     await getDocs(
-      query(userCollection, where("uid", "==", auth.currentUser?.uid))
+      query(
+        userCollection,
+        where("uid", "==", auth.currentUser?.providerData[0].uid)
+      )
     )
   )[0];
 }
 
+export async function updateUser(userId: string, payload: any) {
+  await updateDoc(doc(db, "users", userId), payload);
+}
+
 export async function updateUserData(payload: any) {
   const user = await getCurrentUserData();
-  if (
-    user.followers !== payload.followers ||
-    user.following !== payload.following
-  ) {
-    updateDoc(doc(db, "users", user._id), payload);
-  }
+
+  updateUser(user._id, payload);
 }
 
 export async function getUserFromAddress(address: string) {
   return getData(
     await getDocs(query(userCollection, where("wallet", "==", address)))
   )[0];
+}
+
+export async function getRandomUser(address: string) {
+  const solanaClient = new SolanaClient();
+  const user = getData(
+    await getDocs(query(userCollection, where("wallet", "==", address)))
+  )[0];
+  if (user.followCount >= 2) {
+    if (
+      isYesterday(user.lastFollowed.toDate()) ||
+      differenceInDays(new Date(), user.lastFollowed.toDate()) > 0
+    ) {
+      updateUser(user._id, {
+        followCount: 0,
+      });
+    } else {
+      const message = "Follow quota ended for today";
+      openAlert({
+        message,
+        status: "error",
+      });
+      throw new Error(message);
+    }
+  }
+
+  const users = getData(
+    await getDocs(query(userCollection, where("wallet", "!=", address)))
+  );
+  const searchedUsers = new Set();
+  let index = Math.ceil(Math.random() * users.length) - 1;
+
+  let randomUser = users[index];
+  let hasNft = false;
+
+  while (!hasNft && searchedUsers.size !== users.length) {
+    searchedUsers.add(randomUser._id);
+
+    if (
+      randomUser.followers &&
+      randomUser.followers.includes(currentUser?.providerData[0].uid)
+    ) {
+      index += 1;
+      index %= users.length - 1;
+      randomUser = users[index] ?? null;
+      break;
+    }
+    if (NETWORK === "devnet") {
+      const nfts = await solanaClient.getNftTokens(randomUser.wallet);
+      if (nfts.length > 0) {
+        hasNft = true;
+        break;
+      }
+    } else if (randomUser.hasNfts) {
+      hasNft = true;
+      break;
+    }
+    index += 1;
+    index %= users.length - 1;
+    randomUser = users[index] ?? null;
+  }
+  if (!randomUser) return null;
+
+  const result = await axios.get(
+    `/api/get-twitter-data?user_id=${randomUser.uid}`
+  );
+
+  randomUser = {
+    ...randomUser,
+    ...result.data.data,
+  };
+
+  return randomUser;
+}
+
+export async function getRandomTweet(address: string) {
+  const solanaClient = new SolanaClient();
+  const users = getData(
+    await getDocs(query(userCollection, where("wallet", "!=", address)))
+  );
+  const searchedUsers = new Set();
+  let index = Math.ceil(Math.random() * users.length) - 1;
+
+  let randomUser = users[index];
+  let hasNft = false;
+
+  while (!hasNft && searchedUsers.size !== users.length) {
+    searchedUsers.add(randomUser._id);
+
+    if (NETWORK === "devnet") {
+      const nfts = await solanaClient.getNftTokens(randomUser.wallet);
+      if (nfts.length > 0) {
+        hasNft = true;
+        break;
+      }
+    } else if (randomUser.hasNfts) {
+      hasNft = true;
+      break;
+    }
+    index += 1;
+    index %= users.length - 1;
+    randomUser = users[index] ?? null;
+  }
+  if (!randomUser) return null;
+
+  const result = await axios.get(
+    `/api/get-twitter-random-tweet?user_id=${randomUser.uid}`
+  );
+
+  return result.data.data;
 }

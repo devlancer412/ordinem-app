@@ -42,7 +42,7 @@ const checkIsGif = (image: string) => {
 };
 
 const NftsComponent = () => {
-  const { nfts } = useSolanaNfts();
+  const { nfts, tokens } = useSolanaNfts();
   const { currentUser: user } = useTwitterUser();
 
   return (
@@ -73,11 +73,11 @@ const NftsComponent = () => {
               )}
               <div className="flex gap-3 items-center mt-2">
                 <div className="rounded-full min-w-[6rem] w-1/2 h-2 border border-gray-300">
-                  <div className="w-1/2 h-full bg-green-400"></div>
+                  {/* <div className="w-1/2 h-full bg-green-400"></div> */}
                 </div>
                 <h5 className="text-gray-500">
                   Level{" "}
-                  <strong className="text-black dark:text-white">1</strong>
+                  <strong className="text-black dark:text-white">0</strong>
                 </h5>
               </div>
             </div>
@@ -109,7 +109,7 @@ const NftsComponent = () => {
               )}
               <h5 className="text-gray-500">
                 Tokens Earned:{" "}
-                <strong className="text-black dark:text-white">0</strong> Gold
+                <strong className="text-black dark:text-white">{tokens}</strong> Gold
               </h5>
             </div>
 

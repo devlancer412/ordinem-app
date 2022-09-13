@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 
 const BEARER_TOKEN = process.env.NEXT_PUBLIC_TWITTER_BEARER;
-const URL = `http://api.twitter.com/1.1/users/show.json`;
+const URL = `http://api.twitter.com/1.1/followers/ids.json`;
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const user_id = req.body.user_id ?? req.query.user_id;
@@ -30,15 +30,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       },
     });
 
-    const { screen_name, name, followers_count, friends_count } = result.data;
+    const { ids } = result.data;
 
     res.json({
       status: "ok",
       data: {
-        followers: followers_count,
-        following: friends_count,
-        screen_name,
-        name,
+        ids
       },
     });
   } catch (error: any) {

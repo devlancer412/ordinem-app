@@ -1,10 +1,10 @@
 const Spinner = () => (
   <div className="flex justify-center items-center">
     <div
-      className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full"
+      className="border-blue-500 border-r-transparent animate-spin inline-block w-6 h-6 border-4 rounded-full"
       role="status"
     >
-      <span className="visually-hidden">Loading...</span>
+      <span className="sr-only">Loading...</span>
     </div>
   </div>
 );

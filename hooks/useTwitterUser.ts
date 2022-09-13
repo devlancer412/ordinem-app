@@ -53,7 +53,7 @@ export const useTwitterUser = create<StateWithMutation>((set) => ({
       const usersFromStorage = JSON.parse(localStorage.getItem("users")!) as
         | UserType[]
         | null;
-      console.log(usersFromStorage);
+        
       const findIsUserAvailable = usersFromStorage?.findIndex(
         (user) => user.screenName === currentUser.screenName
       );

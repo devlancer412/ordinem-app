@@ -20,6 +20,7 @@ specifiers:
   autoprefixer: ^10.4.7
   axios: ^0.27.2
   cross-env: ^7.0.3
+  date-fns: ^2.29.2
   eslint: ^8.11.0
   eslint-config-next: ^12.0.7
   firebase: ^9.9.3
@@ -29,6 +30,7 @@ specifiers:
   postcss: ^8.4.14
   react: ^18.0.0
   react-dom: ^18.0.0
+  react-twitter-embed: ^4.0.4
   shx: ^0.3.3
   tailwindcss: ^3.1.6
   typescript: ^4.6.2
@@ -49,12 +51,14 @@ dependencies:
   '@supabase/supabase-js': 1.35.6
   axios: 0.27.2
   cross-env: 7.0.3
+  date-fns: 2.29.2
   firebase: 9.9.3
   lodash: 4.17.21
   next: 12.2.5_rlaikcoslzwwtqyk7brpdzej5y
   next-themes: 0.2.0_3xcjr4wz26biff45sz3jtokgje
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
+  react-twitter-embed: 4.0.4_biqbaboplfbrettd7655fr4n2y
   zustand: 4.1.1_react@18.2.0
 
 devDependencies:
@@ -4641,6 +4645,11 @@ packages:
     resolution: {integrity: sha512-sdQSFB7+llfUcQHUQO3+B8ERRj0Oa4w9POWMI/puGtuf7gFywGmkaLCElnudfTiKZV+NvHqL0ifzdrI8Ro7ESA==}
     dev: true
 
+  /date-fns/2.29.2:
+    resolution: {integrity: sha512-0VNbwmWJDS/G3ySwFSJA3ayhbURMTJLtwM2DTxf9CWondCnh6DTNlO9JgRSq6ibf4eD0lfMJNBxUdEAHHix+bA==}
+    engines: {node: '>=0.11'}
+    dev: false
+
   /dayjs/1.11.5:
     resolution: {integrity: sha512-CAdX5Q3YW3Gclyo5Vpqkgpj8fSdLQcRuzfX6mC6Phy0nfJ0eGYOeS7m4mt2plDWLAtA4TqTakvbboHvUxfe4iA==}
     dev: false
@@ -8075,6 +8084,18 @@ packages:
       react-is: 18.2.0
     dev: false
 
+  /react-twitter-embed/4.0.4_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-2JIL7qF+U62zRzpsh6SZDXNI3hRNVYf5vOZ1WRcMvwKouw+xC00PuFaD0aEp2wlyGaZ+f4x2VvX+uDadFQ3HVA==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: ^16.0.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      scriptjs: 2.5.9
+    dev: false
+
   /react/16.13.1:
     resolution: {integrity: sha512-YMZQQq32xHLX0bz5Mnibv1/LHb3Sqzngu7xstSM+vrkE5Kzr9xE0yMByK5kMoTK30YVJE61WfbxIFFvfeDKT1w==}
     engines: {node: '>=0.10.0'}
@@ -8405,6 +8426,10 @@ packages:
     resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}
     dependencies:
       loose-envify: 1.4.0
+    dev: false
+
+  /scriptjs/2.5.9:
+    resolution: {integrity: sha512-qGVDoreyYiP1pkQnbnFAUIS5AjenNwwQBdl7zeos9etl+hYKWahjRTfzAZZYBv5xNHx7vNKCmaLDQZ6Fr2AEXg==}
     dev: false
 
   /scrypt-js/3.0.1:

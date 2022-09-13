@@ -33,11 +33,6 @@ export const sideNavItems = {
           icon: <TokenEarnings className="fill-gray-500 hover:fill-white" />,
           link: "/earn-gold",
         },
-        {
-          title: "Mint",
-          icon: <Mint className="fill-gray-500 hover:fill-white" />,
-          link: "/",
-        },
         // {
         //   title: "History",
         //   icon: <Dashboard className="fill-gray-500 hover:fill-white" />,
