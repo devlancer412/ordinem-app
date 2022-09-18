@@ -27,7 +27,7 @@ interface StateWithMutation extends State {
   addNft: (payload: NFT) => void;
   searchNfts: (search: string) => void;
   setTwitterAccount: (payload: Twitter, nftId: string) => void;
-  setTokens: (amount: string) => void;
+  setTokens: (amount: number) => void;
 }
 
 export const useSolanaNfts = create<StateWithMutation>((set) => ({
@@ -43,8 +43,8 @@ export const useSolanaNfts = create<StateWithMutation>((set) => ({
       return { ...state, nfts, allNfts: nfts };
     });
   },
-  setTokens: (payload) => {
-    set((state) => ({ ...state, tokens: Number(payload.split(".")[0]) }));
+  setTokens: (tokens) => {
+    set((state) => ({ ...state, tokens }));
   },
   searchNfts: (payload) => {
     console.log(payload);

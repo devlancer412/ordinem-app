@@ -3,7 +3,6 @@ import { useSolanaNfts } from "hooks/useSolanaNfts";
 import type { NextPage } from "next";
 import SignInWithTwitter from "components/buttons/SignInWithTwitter";
 import { useTwitterUser } from "hooks/useTwitterUser";
-import { setTwitterDataToNft } from "utils/firebaseClient";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import Image from "components/Image";
 import NextImage from "next/image";
@@ -87,9 +86,9 @@ const NftsComponent = () => {
               {user && (
                 <div className="flex gap-1 mt-1 mb-3 items-center text-gray-500">
                   <div className="rounded-full h-6 w-6 overflow-hidden">
-                    {user.photoURL && (
+                    {user.profile_image && (
                       <Image
-                        src={user.photoURL}
+                        src={user.profile_image}
                         alt={user.displayName as string}
                       />
                     )}
@@ -114,7 +113,7 @@ const NftsComponent = () => {
             </div>
 
             {!nft.twitter && (
-              <div>
+              <div className="none lg:block">
                 <SignInWithTwitter />
               </div>
             )}

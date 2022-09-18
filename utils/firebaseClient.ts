@@ -1,4 +1,4 @@
-import { NETWORK } from "./constants";
+import { calculateLevels, getCurrentTime, NETWORK } from "./constants";
 import { useTwitterUser } from "hooks/useTwitterUser";
 import { initializeApp } from "firebase/app";
 import {
@@ -24,6 +24,7 @@ import { useAlert } from "hooks/useAlert";
 import SolanaClient from "./solanaClient";
 import axios from "axios";
 import { differenceInDays, isYesterday } from "date-fns";
+import { endedQuotas, ordinemUsers, tweet_id, usersToFollow } from "./earnGoldStore";
 
 const provider = new TwitterAuthProvider();
 
@@ -46,7 +47,11 @@ export const nftCollection = collection(db, "nfts");
 
 const auth = getAuth();
 const { open: openAlert } = useAlert.getState();
-const { removeUser, changeUser, currentUser } = useTwitterUser.getState();
+const { removeUser, changeUser } = useTwitterUser.getState();
+let currentUserId: string;
+const subscription = useTwitterUser.subscribe(
+  (state) => (currentUserId = state.currentUser?.providerData[0].uid as string)
+);
 
 export async function logoutFromTwitter() {
   await signOut(auth);
@@ -60,8 +65,16 @@ export async function signInWithTwitterFirebase(address?: string) {
     console.log(credential);
     const user = result.user;
 
-    const q = query(userCollection, where("uid", "==", user.uid));
-    const docs = await getDocs(q);
+    const userWithAddress = getData(
+      await getDocs(query(userCollection, where("wallet", "==", address)))
+    )[0];
+    if (userWithAddress && userWithAddress.uid !== user.providerData[0].uid) {
+      logoutFromTwitter();
+      throw new Error("This wallet is already in use for another account");
+    }
+    const docs = await getDocs(
+      query(userCollection, where("uid", "==", user.providerData[0].uid))
+    );
     if (docs.docs.length === 0) {
       const {
         email,
@@ -92,7 +105,7 @@ export async function signInWithTwitterFirebase(address?: string) {
         });
         changeUser(address);
       } else if (user.wallet !== address) {
-        await signOut(auth);
+        logoutFromTwitter();
         throw new Error("Usage of different wallet for this account");
       }
     }
@@ -111,41 +124,11 @@ export const getData = (
   docs.docs.map((doc) => ({ ...doc.data(), _id: doc.id }));
 
 export async function getFirebaseNfts(publicKey: string) {
-  const nftData = getData(
+  return getData(
     await getDocs(
       query(nftCollection, where("wallet_address", "==", publicKey))
     )
   );
-  const nfts = await Promise.all(
-    nftData.map(async (data) => {
-      let twitter;
-      if ("twitter_id" in data) {
-        const twitterData = await getDoc((data as any).twitter_id);
-        twitter = twitterData.data();
-      }
-
-      return { ...data, twitter };
-    })
-  );
-  return nfts;
-}
-
-export async function setTwitterDataToNft(publicKey: string, mint: string) {
-  if (!auth.currentUser || !auth.currentUser.uid) return;
-  const nftData = getData(
-    await getDocs(
-      query(
-        nftCollection,
-        where("wallet_address", "==", publicKey),
-        where("mint", "==", mint)
-      )
-    )
-  );
-  const user = await getCurrentUserData();
-
-  updateDoc(doc(db, "nfts", nftData[0]._id), {
-    twitter_id: doc(db, `/users/${user._id}`),
-  });
 }
 
 export async function getUserData(uid: string) {
@@ -153,15 +136,19 @@ export async function getUserData(uid: string) {
     await getDocs(query(userCollection, where("uid", "==", uid)))
   )[0];
 }
-export async function getCurrentUserData() {
-  return getData(
-    await getDocs(
-      query(
-        userCollection,
-        where("uid", "==", auth.currentUser?.providerData[0].uid)
+export async function getCurrentUserData(uid?: string) {
+  console.log(currentUserId);
+  let docs = await getDocs(
+    query(
+      userCollection,
+      where(
+        "uid",
+        "==",
+        uid ?? currentUserId ?? auth.currentUser?.providerData[0].uid
       )
     )
-  )[0];
+  );
+  return getData(docs)[0];
 }
 
 export async function updateUser(userId: string, payload: any) {
@@ -180,20 +167,23 @@ export async function getUserFromAddress(address: string) {
   )[0];
 }
 
-export async function getRandomUser(address: string) {
-  const solanaClient = new SolanaClient();
+export async function getRandomUser(address: string, uid: string) {
   const user = getData(
     await getDocs(query(userCollection, where("wallet", "==", address)))
   )[0];
-  if (user.followCount >= 2) {
+  const level = calculateLevels(user.nftCount ?? 1);
+  const today = await getCurrentTime();
+
+  if (user.followCount >= level) {
     if (
       isYesterday(user.lastFollowed.toDate()) ||
-      differenceInDays(new Date(), user.lastFollowed.toDate()) > 0
+      differenceInDays(today, user.lastFollowed.toDate()) > 0
     ) {
       updateUser(user._id, {
         followCount: 0,
       });
     } else {
+      endedQuotas.value.follow = true;
       const message = "Follow quota ended for today";
       openAlert({
         message,
@@ -203,88 +193,110 @@ export async function getRandomUser(address: string) {
     }
   }
 
-  const users = getData(
+  let users = getData(
     await getDocs(query(userCollection, where("wallet", "!=", address)))
   );
-  const searchedUsers = new Set();
+  users = users.filter((user) => {
+    let isFollower = false;
+    if (user.followers) {
+      isFollower = user.followers.includes(uid);
+    }
+    return user.hasNfts && !isFollower;
+  });
+
   let index = Math.ceil(Math.random() * users.length) - 1;
+  users = [...users.splice(index, 1), ...users];
 
-  let randomUser = users[index];
-  let hasNft = false;
+  usersToFollow.value = users;
 
-  while (!hasNft && searchedUsers.size !== users.length) {
-    searchedUsers.add(randomUser._id);
-
-    if (
-      randomUser.followers &&
-      randomUser.followers.includes(currentUser?.providerData[0].uid)
-    ) {
-      index += 1;
-      index %= users.length - 1;
-      randomUser = users[index] ?? null;
-      break;
-    }
-    if (NETWORK === "devnet") {
-      const nfts = await solanaClient.getNftTokens(randomUser.wallet);
-      if (nfts.length > 0) {
-        hasNft = true;
-        break;
-      }
-    } else if (randomUser.hasNfts) {
-      hasNft = true;
-      break;
-    }
-    index += 1;
-    index %= users.length - 1;
-    randomUser = users[index] ?? null;
-  }
-  if (!randomUser) return null;
-
-  const result = await axios.get(
-    `/api/get-twitter-data?user_id=${randomUser.uid}`
-  );
-
-  randomUser = {
-    ...randomUser,
-    ...result.data.data,
-  };
-
-  return randomUser;
 }
 
-export async function getRandomTweet(address: string) {
-  const solanaClient = new SolanaClient();
-  const users = getData(
+export async function getRandomTweet(address: string, uid: string) {
+  const quotas: ("Likes" | "Reply" | "")[] = [];
+  const user = getData(
+    await getDocs(query(userCollection, where("wallet", "==", address)))
+  )[0];
+  const level = calculateLevels(user.nftCount ?? 1);
+  const today = await getCurrentTime();
+
+  if (user.likeCount >= level) {
+    if (
+      isYesterday(user.lastLiked.toDate()) ||
+      differenceInDays(today, user.lastLiked.toDate()) > 0
+    ) {
+      updateUser(user._id, {
+        likeCount: 0,
+      });
+    } else {
+      endedQuotas.value.like = true;
+      quotas.push("Likes");
+    }
+  }
+  if (user.replyCount >= level) {
+    if (
+      isYesterday(user.lastReplied.toDate()) ||
+      differenceInDays(today, user.lastReplied.toDate()) > 0
+    ) {
+      updateUser(user._id, {
+        replyCount: 0,
+      });
+    } else {
+      endedQuotas.value.comment = true;
+      quotas.push("Reply");
+    }
+  }
+
+  if (quotas.length === 2) {
+    const message = quotas.join(", ") + " quotas expired for today";
+    openAlert({
+      message,
+      status: "error",
+    });
+    throw new Error(message);
+  } else if (quotas.length === 1) {
+    const message = `Quota for ${quotas[0]} expired`;
+    openAlert({
+      message,
+      status: "error",
+    });
+  }
+
+  let users = getData(
     await getDocs(query(userCollection, where("wallet", "!=", address)))
   );
-  const searchedUsers = new Set();
-  let index = Math.ceil(Math.random() * users.length) - 1;
+  users = users.filter((user) => user.hasNfts);
+  ordinemUsers.value = users as any;
 
-  let randomUser = users[index];
-  let hasNft = false;
+  let tweet = null;
 
-  while (!hasNft && searchedUsers.size !== users.length) {
-    searchedUsers.add(randomUser._id);
+  while (!tweet) {
+    let index = Math.ceil(Math.random() * users.length) - 1;
+    const randomUser = users[index];
+    const currentUserId = randomUser.uid;
 
-    if (NETWORK === "devnet") {
-      const nfts = await solanaClient.getNftTokens(randomUser.wallet);
-      if (nfts.length > 0) {
-        hasNft = true;
-        break;
-      }
-    } else if (randomUser.hasNfts) {
-      hasNft = true;
-      break;
+    const result = await axios.get(
+      `/api/get-twitter-random-tweet?user_id=${currentUserId}`
+    );
+    const tweetData = result.data.data;
+    if (!tweetData || !tweetData.id_str) {
+      continue;
     }
-    index += 1;
-    index %= users.length - 1;
-    randomUser = users[index] ?? null;
+    const likeVerify = await axios.get(
+      `/api/verify-like?user_id=${currentUserId}&tweet_id=${tweetData.id_str}`
+    );
+    if (likeVerify.data.data) {
+      continue;
+    }
+
+    const replyVerify = await axios.get(
+      `/api/verify-reply?user_id=${currentUserId}&tweet_id=${tweetData.id_str}`
+    );
+    if (replyVerify.data.data) {
+      continue;
+    }
+
+    tweet = result.data.data;
   }
-  if (!randomUser) return null;
 
-  const result = await axios.get(
-    `/api/get-twitter-random-tweet?user_id=${randomUser.uid}`
-  );
-
-  return result.data.data;
+  tweet_id.value = tweet.id_str;
 }

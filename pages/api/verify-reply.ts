@@ -2,24 +2,17 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 
 const BEARER_TOKEN = process.env.NEXT_PUBLIC_TWITTER_BEARER;
-const URL = `http://api.twitter.com/1.1/users/show.json`;
+const URL = `https://api.twitter.com/1.1/statuses/user_timeline.json`;
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const user_id = req.body.user_id ?? req.query.user_id;
-  const screen_name = req.body.screen_name ?? req.query.screen_name;
-  const params: any = {};
+  const tweet_id = req.body.tweet_id ?? req.query.tweet_id;
+  const params: any = { user_id };
 
-  if (screen_name) {
-    params.screen_name = screen_name;
-  }
-  if (user_id) {
-    params.user_id = user_id;
-  }
-
-  if (!user_id && !screen_name) {
+  if (!user_id || !user_id.trim()) {
     res.json({
       status: "error",
-      error: "Enter a valid id or username",
+      error: "Enter a valid id",
     });
 
     return;
@@ -32,19 +25,15 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         authorization: `Bearer ${BEARER_TOKEN}`,
       },
     });
-
-    const { screen_name, name, followers_count, friends_count, profile_image_url_https } = result.data;
+    const filtered = result.data.filter(
+      (data: any) =>
+        data.in_reply_to_status_id_str &&
+        data.in_reply_to_status_id_str === tweet_id
+    );
 
     res.json({
       status: "ok",
-      data: {
-        ...result.data,
-        followers: followers_count,
-        following: friends_count,
-        image: profile_image_url_https,
-        screen_name,
-        name,
-      },
+      data: filtered.length > 0,
     });
   } catch (error: any) {
     console.log(error);

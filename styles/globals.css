@@ -36,6 +36,9 @@
   .bg-gradient {
     @apply bg-gradient-to-br from-light-background-400 to-light-background-800 dark:from-[#DD0E23] dark:to-[#270318];
   }
+  .none {
+    display: none;
+  }
 }
 
 @layer components {
@@ -72,4 +75,13 @@
   width: 100% !important;
   position: relative !important;
   height: unset !important;
+}
+
+/* Twitter styling */
+.twitter-tweet.twitter-tweet-rendered {
+  @apply rounded-lg overflow-hidden;
+}
+
+.twitter-tweet.twitter-tweet-rendered::-webkit-scrollbar-track{
+  display: none;
 }

@@ -7,6 +7,7 @@ type UserType = User & {
   followers?: number | string;
   following?: number | string;
   wallet?: string;
+  profile_image?: string;
 };
 
 type State = {
@@ -36,16 +37,24 @@ export const useTwitterUser = create<StateWithMutation>((set) => ({
       screenName: (payload as any)?.reloadUserInfo?.screenName,
       followers: undefined,
       following: undefined,
+      profile_image: undefined,
     };
     try {
       const result = await axios.get(
         `/api/get-twitter-data?user_id=${payload.providerData[0].uid}`
       );
-      const { followers, following, name, screen_name } = result.data.data;
+      const {
+        followers,
+        following,
+        name,
+        screen_name,
+        profile_image_url_https,
+      } = result.data.data;
       currentUser.followers = followers;
       currentUser.following = following;
       currentUser.displayName = name;
       currentUser.screenName = screen_name;
+      currentUser.profile_image = profile_image_url_https;
     } catch (error) {
       console.log(error);
     } finally {
@@ -53,7 +62,7 @@ export const useTwitterUser = create<StateWithMutation>((set) => ({
       const usersFromStorage = JSON.parse(localStorage.getItem("users")!) as
         | UserType[]
         | null;
-        
+
       const findIsUserAvailable = usersFromStorage?.findIndex(
         (user) => user.screenName === currentUser.screenName
       );

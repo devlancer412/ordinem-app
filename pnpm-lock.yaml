@@ -5,6 +5,7 @@ specifiers:
   '@babel/preset-env': ^7.1.6
   '@babel/runtime': '>=7.0.0 <8.0.0'
   '@headlessui/react': ^1.6.6
+  '@preact/signals-react': ^1.0.2
   '@solana-mobile/wallet-adapter-mobile': ^0.0.1-alpha.0
   '@solana/spl-token': ^0.2.0
   '@solana/wallet-adapter-base': ^0.9.9
@@ -31,6 +32,7 @@ specifiers:
   react: ^18.0.0
   react-dom: ^18.0.0
   react-twitter-embed: ^4.0.4
+  react-twitter-widgets: ^1.11.0
   shx: ^0.3.3
   tailwindcss: ^3.1.6
   typescript: ^4.6.2
@@ -41,6 +43,7 @@ dependencies:
   '@babel/preset-env': 7.18.10_@babel+core@7.18.13
   '@babel/runtime': 7.18.9
   '@headlessui/react': 1.6.6_biqbaboplfbrettd7655fr4n2y
+  '@preact/signals-react': 1.0.2_react@18.2.0
   '@solana-mobile/wallet-adapter-mobile': 0.0.1-alpha.8_xzu3cbnm5p7kp3yqoosaven72e
   '@solana/spl-token': 0.2.0
   '@solana/wallet-adapter-base': 0.9.16_@solana+web3.js@1.54.0
@@ -59,6 +62,7 @@ dependencies:
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
   react-twitter-embed: 4.0.4_biqbaboplfbrettd7655fr4n2y
+  react-twitter-widgets: 1.11.0_react@18.2.0
   zustand: 4.1.1_react@18.2.0
 
 devDependencies:
@@ -2332,6 +2336,19 @@ packages:
 
   /@pedrouid/environment/1.0.1:
     resolution: {integrity: sha512-HaW78NszGzRZd9SeoI3JD11JqY+lubnaOx7Pewj5pfjqWXOEATpeKIFb9Z4t2WBUK2iryiXX3lzWwmYWgUL0Ug==}
+    dev: false
+
+  /@preact/signals-core/1.1.1:
+    resolution: {integrity: sha512-otWUXVDAX2qWMBqBELvYBcEehBnta9zWhFZ+PZ3siL6LCu4Rk0u7q1bUgfTKPJjAbMYyPcIMoX/j34kDqcNlLg==}
+    dev: false
+
+  /@preact/signals-react/1.0.2_react@18.2.0:
+    resolution: {integrity: sha512-Wh2QazkNnmXn5RTFtOMDHsvG8UaWCfLVcEISNnAH+cRt395EstJE47d4gDaKWeMcrBD9E68CbN+0MKmZ+0S61w==}
+    peerDependencies:
+      react: 17.x || 18.x
+    dependencies:
+      '@preact/signals-core': 1.1.1
+      react: 18.2.0
     dev: false
 
   /@project-serum/sol-wallet-adapter/0.2.0_@solana+web3.js@1.54.0:
@@ -6663,6 +6680,10 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
+  /loadjs/4.2.0:
+    resolution: {integrity: sha512-AgQGZisAlTPbTEzrHPb6q+NYBMD+DP9uvGSIjSUM5uG+0jG15cb8axWpxuOIqrmQjn6scaaH8JwloiP27b2KXA==}
+    dev: false
+
   /locate-path/3.0.0:
     resolution: {integrity: sha512-7AO748wWnIhNqAuaty2ZWHkQHRSNfPVIsPIfwEOWO22AmaoVrWavlOcMR5nzTLNYvp36X220/maaRsrec1G65A==}
     engines: {node: '>=6'}
@@ -8094,6 +8115,15 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       scriptjs: 2.5.9
+    dev: false
+
+  /react-twitter-widgets/1.11.0_react@18.2.0:
+    resolution: {integrity: sha512-PMCLJQc30iqy01y1b2+HnMfCX+ZkOxWaPKJb4BhHgOgjSjoZb68K5T0nq3q+3YbX9K7OH0bhptgDihtBG/BqRQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18
+    dependencies:
+      loadjs: 4.2.0
+      react: 18.2.0
     dev: false
 
   /react/16.13.1:

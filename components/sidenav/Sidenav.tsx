@@ -12,12 +12,14 @@ import { useTwitterUser } from "hooks/useTwitterUser";
 import SignInWithTwitter from "components/buttons/SignInWithTwitter";
 import { useSideNav } from "hooks/useSideNav";
 import { useWindowSize } from "hooks/useWindowSize";
+import TwitterInputLogin from "components/TwitterInputLogin";
 
 export const Sidenav = () => {
   const { systemTheme, theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { show, close } = useSideNav();
   const { width } = useWindowSize();
+  const { currentUser } = useTwitterUser();
 
   useEffect(() => {
     setMounted(true);
@@ -86,19 +88,32 @@ export const Sidenav = () => {
             return (
               <div key={index}>
                 {item.items.map(
-                  ({ secondTitle, link, title, icon }, menuItemIndex) => {
+                  (
+                    { secondTitle, link, title, icon, ...props },
+                    menuItemIndex
+                  ) => {
+                    const comingSoon = (props as any)?.comingSoon;
                     return (
                       <div key={menuItemIndex}>
                         {title !== "Light Mode" ? (
-                          <div className="flex flex-col">
+                          <div
+                            className={`flex flex-col ${
+                              comingSoon && "pointer-events-none"
+                            }`}
+                          >
                             <span className="px-4 pt-4 text-xs text-gray-800 dark:text-gray-50">
                               {secondTitle}
                             </span>
                             {title != null && (
                               <Link href={link ?? ""}>
-                                <a className="flex px-4 py-2 transition-all duration-200 hover:bg-primary-500 hover:text-white dark:text-dark-text-500 hover:dark:text-white group">
+                                <a className="flex items-center gap-3 px-4 py-2 transition-all duration-200 hover:bg-primary-500 hover:text-white dark:text-dark-text-500 hover:dark:text-white group">
                                   <span className="mr-2">{icon}</span>
                                   <span className="text-base">{title}</span>
+                                  {comingSoon && (
+                                    <span className="rounded-lg px-4 py-1 text-sm bg-gray-300 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                                      Coming Soon
+                                    </span>
+                                  )}
                                 </a>
                               </Link>
                             )}
@@ -115,7 +130,13 @@ export const Sidenav = () => {
           })}
           <div className="flex w-full mt-20">
             <TwitterCard />
-            <SignInWithTwitter />
+            {!currentUser && (
+              <div className="flex flex-col gap-4 items-center">
+                <SignInWithTwitter />
+                <h5>OR</h5>
+                <TwitterInputLogin />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -137,7 +158,9 @@ const TwitterCard = () => {
           <Image
             className="rounded-full"
             src={
-              userData?.photoURL ?? "/pexels-vietnam-photographer-11293709.jpg"
+              userData.profile_image ??
+              userData?.photoURL ??
+              "/pexels-vietnam-photographer-11293709.jpg"
             }
             width="50px"
             height="50px"
@@ -161,11 +184,13 @@ const TwitterCard = () => {
             Following
           </p>
         </div>
-        <button className="flex items-center justify-center w-full px-4 py-2 mt-8 bg-white rounded-2xl">
-          <FollowIcon />
-          <span className="mx-2 text-black">Top Up Followers</span>
-          <ArrowRight />
-        </button>
+        <Link href={"/earn-gold"}>
+          <a className="flex items-center justify-center w-full px-4 py-2 mt-8 bg-white rounded-2xl">
+            <FollowIcon />
+            <span className="mx-2 text-black">Earn Gold</span>
+            <ArrowRight />
+          </a>
+        </Link>
       </div>
     </div>
   );
