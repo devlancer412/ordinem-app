@@ -1,25 +1,29 @@
-import axios from "axios";
-import { NETWORK, SOLANA_API_KEY } from "./constants";
+import axios from 'axios';
+import { Connection, GetProgramAccountsFilter } from '@solana/web3.js';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+
+import { NETWORK, SOLANA_API_KEY, rpcEndpoint } from './constants';
 import {
   db,
   getFirebaseNfts,
   getUserFromAddress,
   nftCollection,
   updateUser,
-} from "utils/firebase";
-import { useSolanaNfts } from "hooks/useSolanaNfts";
-import { differenceWith } from "lodash";
-import { addDoc, deleteDoc, doc } from "firebase/firestore";
+} from 'utils/firebase';
+import { useSolanaNfts } from 'hooks/useSolanaNfts';
+import { differenceWith } from 'lodash';
+import { addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { getTokenData } from './firebase/firebase';
 
 const axiosInstance = axios.create({
-  baseURL: "https://solana-gateway.moralis.io",
+  baseURL: 'https://solana-gateway.moralis.io',
   headers: {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Origin, Content-Type, X-Auth-Token",
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    "X-API-Key": SOLANA_API_KEY as string,
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Origin, Content-Type, X-Auth-Token',
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    'X-API-Key': SOLANA_API_KEY as string,
   },
 });
 
@@ -27,68 +31,51 @@ const { setTokens, setNfts } = useSolanaNfts.getState();
 
 export default class SolanaClient {
   async getAllNfts(publicKey: string) {
+    setNfts([]);
     try {
-      setNfts(null!);
-      const firebaseNfts = await getFirebaseNfts(publicKey);
+      const solanaConnection = new Connection(rpcEndpoint);
 
-      if (firebaseNfts && firebaseNfts.length) {
-        setNfts(firebaseNfts as any);
-      }
+      const wallet = publicKey; //example: vines1vzrYbzLMRdu58ou5XTby4qAqVRLmqo36NKPTg
 
-      const nftTokens = await this.getNftTokens(publicKey);
-      const deleteDiff = differenceWith(
-        firebaseNfts ?? [],
-        nftTokens,
-        (i: any, o: any) => i.mint === o.mint
-      );
-      if (deleteDiff.length) {
-        deleteDiff.forEach(async (token) => {
-          await deleteDoc(doc(db, "nfts", token._id));
-        });
-      }
-
-      const tokenDiff = differenceWith(
-        nftTokens,
-        firebaseNfts ?? [],
-        (i: any, o: any) => i.mint === o.mint
+      const filters: GetProgramAccountsFilter[] = [
+        {
+          dataSize: 165, //size of account (bytes)
+        },
+        {
+          memcmp: {
+            offset: 32, //location of our query in the account (bytes)
+            bytes: wallet, //our search criteria, a base58 encoded string
+          },
+        },
+      ];
+      const accounts = await solanaConnection.getParsedProgramAccounts(
+        TOKEN_PROGRAM_ID, //new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+        { filters: filters }
       );
 
-      if (tokenDiff.length === 0) return;
-
-      const nfts = await Promise.all(
-        nftTokens.map((nft: any) => this.getNftMetadata(nft.mint))
+      console.log(
+        `Found ${accounts.length} token account(s) for wallet ${wallet}.`
       );
 
-      const ordinemNfts = nfts.filter((nft) => nft !== null);
-      const diff = differenceWith(
-        ordinemNfts,
-        firebaseNfts,
-        (i: any, o: any) => i.mint === o.mint
-      );
-      if (diff.length === 0) return;
-
-      if (NETWORK === "mainnet") {
-        const user = await getUserFromAddress(publicKey);
-        if (user) {
-          updateUser(user._id, {
-            hasNfts: ordinemNfts.length > 0,
-            nftCount: ordinemNfts.length,
-          });
+      let nfts: NFT[] = [];
+      accounts.forEach(async (account, i) => {
+        //Parse the account data
+        const parsedAccountInfo: any = account.account.data;
+        if (
+          parsedAccountInfo['parsed']['info']['tokenAmount']['decimals'] != 0
+        ) {
+          return;
         }
-        if (diff.length) {
-          diff.forEach(async (token) => {
-            await addDoc(nftCollection, {
-              ...token,
-              wallet_address: publicKey,
-            });
-          });
+
+        const mintAddress: string = parsedAccountInfo['parsed']['info']['mint'];
+        const data = await getTokenData(mintAddress);
+        console.log(data);
+        if (data) {
+          nfts.push(data as NFT);
         }
-      }
-      if (ordinemNfts.length) {
-        setNfts(ordinemNfts as any);
-      } else {
-        setNfts([]);
-      }
+      });
+
+      setNfts(nfts);
     } catch (error) {
       console.log(error);
 
@@ -103,21 +90,20 @@ export default class SolanaClient {
   }
 
   async getGoldTokens(publicKey: string) {
-    const user = await getUserFromAddress(publicKey);
-    if (user && user.tokensEarned) {
-      setTokens(user.tokensEarned);
-      return;
-    }
-
-    const tokens = await this.getData(
-      `/account/${NETWORK}/${publicKey}/tokens`
-    );
-    const token = tokens.find(
-      (token: any) => token.mint === process.env.NEXT_PUBLIC_MINT_TOKEN_ADDRESS
-    );
-    if (token) {
-      setTokens(Number(token.amount.split(".")[0]));
-    }
+    // const user = await getUserFromAddress(publicKey);
+    // if (user && user.tokensEarned) {
+    //   setTokens(user.tokensEarned);
+    //   return;
+    // }
+    // const tokens = await this.getData(
+    //   `/account/${NETWORK}/${publicKey}/tokens`
+    // );
+    // const token = tokens.find(
+    //   (token: any) => token.mint === process.env.NEXT_PUBLIC_MINT_TOKEN_ADDRESS
+    // );
+    // if (token) {
+    //   setTokens(Number(token.amount.split('.')[0]));
+    // }
   }
 
   async getNftTokens(publicKey: string) {
@@ -127,8 +113,8 @@ export default class SolanaClient {
   private async getNftMetadata(address: string) {
     const metadata = await this.getData(`nft/${NETWORK}/${address}/metadata`);
     if (
-      NETWORK !== "devnet" &&
-      !metadata.name.toLowerCase().includes("ordinem")
+      NETWORK !== 'devnet' &&
+      !metadata.name.toLowerCase().includes('ordinem')
     )
       return null;
 

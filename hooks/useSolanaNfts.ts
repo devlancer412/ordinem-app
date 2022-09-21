@@ -1,19 +1,9 @@
-import create from "zustand";
+import create from 'zustand';
 
 type Twitter = {
   screenName: string;
   displayName?: string;
   image: string;
-};
-
-type NFT = {
-  name: string;
-  standard: string;
-  symbol: string;
-  image: string;
-  twitter?: Twitter;
-  mint?: string;
-  [key: string]: any;
 };
 
 type State = {
@@ -59,15 +49,16 @@ export const useSolanaNfts = create<StateWithMutation>((set) => ({
   },
   setTwitterAccount: (payload, nftId) => {
     set((state) => {
-      const nfts = state.nfts?.map((nft) =>
-        nft.mint === nftId
-          ? {
-              ...nft,
-              twitter: payload,
-            }
-          : nft
-      );
-      return { ...state, nfts };
+      // const nfts = state.nfts?.map((nft) =>
+      //   nft.mint === nftId
+      //     ? {
+      //         ...nft,
+      //         twitter: payload,
+      //       }
+      //     : nft
+      // );
+      // return { ...state, nfts };
+      return { ...state, nfts: [] };
     });
   },
 }));
