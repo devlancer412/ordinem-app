@@ -6,7 +6,7 @@ import {
   getUserFromAddress,
   nftCollection,
   updateUser,
-} from "./firebaseClient";
+} from "utils/firebase";
 import { useSolanaNfts } from "hooks/useSolanaNfts";
 import { differenceWith } from "lodash";
 import { addDoc, deleteDoc, doc } from "firebase/firestore";
@@ -84,8 +84,11 @@ export default class SolanaClient {
           });
         }
       }
-
-      setNfts(ordinemNfts as any);
+      if (ordinemNfts.length) {
+        setNfts(ordinemNfts as any);
+      } else {
+        setNfts([]);
+      }
     } catch (error) {
       console.log(error);
 

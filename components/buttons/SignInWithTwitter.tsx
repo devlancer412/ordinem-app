@@ -1,17 +1,23 @@
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { useTwitterUser } from "hooks/useTwitterUser";
 import React from "react";
-import { signInWithTwitterFirebase } from "utils/firebaseClient";
+import { signInWithTwitterFirebase } from "utils/firebase";
 
 function SignInWithTwitter() {
   const { currentUser: user } = useTwitterUser();
-  const wallet = useAnchorWallet()
+  const wallet = useAnchorWallet();
 
   if (user) return null;
 
   return (
     <button
-      onClick={() => signInWithTwitterFirebase(wallet?.publicKey.toString())}
+      onClick={async () => {
+        try {
+          await signInWithTwitterFirebase(wallet?.publicKey.toString());
+        } catch (error) {
+          console.warn(error);
+        }
+      }}
       className="px-5 py-2 rounded-full flex gap-3 items-center"
     >
       <svg

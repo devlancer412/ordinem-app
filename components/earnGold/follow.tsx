@@ -3,25 +3,17 @@ import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import axios from "axios";
 import Spinner from "components/Spinner";
 import { arrayUnion, increment, serverTimestamp } from "firebase/firestore";
-import { useAlert } from "hooks/useAlert";
 import { useNotification } from "hooks/useNotification";
+import { useQuests } from "hooks/useQuests";
 import { useTwitterUser } from "hooks/useTwitterUser";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { calculateLevels } from "utils/constants";
 import {
-  endedQuotas,
-  indexOfUserToFollow,
-  usersToFollow,
-  userToFollow,
-} from "utils/earnGoldStore";
-import {
-  getCurrentUserData,
   getRandomUser,
   updateUser,
   updateUserData,
-} from "utils/firebaseClient";
-import { sendTokensToUser } from "utils/token";
+} from "utils/firebase";
+import { updateTokensToDB } from "utils/token";
 import LoadingButton from "./LoadingButton";
 import SuccessPopup from "./SuccessPopup";
 
@@ -31,45 +23,16 @@ const Follow = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
+  const { fetchAndChangeUser, usersToFollow, indexOfUser, quotasEnded } =
+    useQuests();
   const wallet = useAnchorWallet();
   const { currentUser } = useTwitterUser();
   const { openNotification } = useNotification();
-  const { open } = useAlert();
 
-  const fetchAndChangeUser = async () => {
-    const firebaseUser = usersToFollow.value[indexOfUserToFollow.value];
-    const uid = currentUser?.providerData[0].uid;
-    const currentUserData = await getCurrentUserData(uid);
-    if (
-      currentUserData.followCount >=
-      calculateLevels(currentUserData.nftCount ?? 1)
-    ) {
-      open({
-        message: "Follow quota exceeds",
-        status: "error",
-      });
-      endedQuotas.value.follow = true;
-      return;
-    }
-    if (firebaseUser.followers && firebaseUser.followers.includes(uid)) {
-      updateNewUser();
-      return;
-    }
-    const result = await axios.get(
-      `/api/get-twitter-data?user_id=${firebaseUser.uid}`
-    );
-
-    userToFollow.value = {
-      ...firebaseUser,
-      ...result.data.data,
-      image: result.data.data.profile_image_url_https.replace("_normal", ""),
-    };
-
-    setIsVerified(false);
-  };
+  const user = usersToFollow[indexOfUser];
 
   const fetchUsers = async () => {
-    if (!wallet || !currentUser || usersToFollow.value.length) return;
+    if (!wallet || !currentUser || usersToFollow.length) return;
 
     setIsLoading(true);
     try {
@@ -77,18 +40,10 @@ const Follow = () => {
         wallet?.publicKey.toString(),
         currentUser?.providerData[0].uid
       );
-
-      fetchAndChangeUser();
     } catch (error) {
       console.log(error);
     }
     setIsLoading(false);
-  };
-
-  const updateNewUser = async () => {
-    indexOfUserToFollow.value += 1;
-
-    await fetchAndChangeUser();
   };
 
   useEffect(() => {
@@ -101,7 +56,7 @@ const Follow = () => {
       setIsVerifying(true);
       try {
         const result = await axios.get(
-          `/api/get-twitter-followers?user_id=${userToFollow.value?.uid}`
+          `/api/get-twitter-followers?user_id=${user.uid}`
         );
         const currentUserId = currentUser?.providerData[0].uid;
 
@@ -111,23 +66,23 @@ const Follow = () => {
           result.data.data.ids.includes(Number(currentUserId))
         ) {
           setIsVerified(true);
-          updateUser(userToFollow.value._id, {
+          updateUser(user._id, {
             followers: arrayUnion(currentUserId),
           });
           updateUserData({
             followCount: increment(1),
             lastFollowed: serverTimestamp(),
           });
-          const sig = await sendTokensToUser(
+          const amount = await updateTokensToDB(
             wallet?.publicKey.toString() as string,
             5
           );
 
           openNotification(() => (
-            <SuccessPopup goldRecieved={5} quest="follow" signature={sig} />
+            <SuccessPopup goldRecieved={amount} quest="follow" />
           ));
 
-          updateNewUser();
+          fetchAndChangeUser();
         }
       } catch (error) {
         console.log(error);
@@ -143,7 +98,7 @@ const Follow = () => {
 
   if (isLoading) return <div>Loading ...</div>;
 
-  if (endedQuotas.value.follow)
+  if (quotasEnded.follow)
     return (
       <div className="w-full h-full flex flex-col justify-center items-center text-center">
         <h4>Quota ended for today</h4>
@@ -151,9 +106,7 @@ const Follow = () => {
       </div>
     );
 
-  if (userToFollow.value === null) return null;
-
-  const user = userToFollow.value;
+  if (!user) return null;
 
   return (
     <>
@@ -206,12 +159,12 @@ const Follow = () => {
           )}
         </div>
 
-        {usersToFollow.value.length > 0 &&
-          indexOfUserToFollow.value !== usersToFollow.value.length - 1 && (
+        {usersToFollow.length > 0 &&
+          indexOfUser !== usersToFollow.length - 1 && (
             <LoadingButton
               className="mt-4"
               text="Next"
-              onClick={updateNewUser}
+              onClick={fetchAndChangeUser}
             />
           )}
       </div>

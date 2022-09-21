@@ -21,7 +21,7 @@
     "scripts": {
         "clean": "shx rm -rf .next",
         "dev": "cross-env NODE_OPTIONS='--inspect' next dev",
-        "build": "yarn clean && next build",
+        "build": "next build",
         "start": "next start",
         "lint": "next lint"
     },
@@ -48,7 +48,7 @@
         "next-themes": "^0.2.0",
         "react": "^18.0.0",
         "react-dom": "^18.0.0",
-        "react-twitter-embed": "^4.0.4",
+        "react-error-boundary": "^3.1.4",
         "react-twitter-widgets": "^1.11.0",
         "zustand": "^4.1.1"
     },

@@ -1,22 +1,19 @@
-import { useAnchorWallet } from "@solana/wallet-adapter-react";
+import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import axios from "axios";
 import { arrayUnion, increment, serverTimestamp } from "firebase/firestore";
 import { useNotification } from "hooks/useNotification";
 import { useTwitterUser } from "hooks/useTwitterUser";
 import { useEffect, useState } from "react";
-import { calculateLevels } from "utils/constants";
 import {
-  getCurrentUserData,
+  fetchAndChangeTweet,
   getRandomTweet,
   updateUserData,
-} from "utils/firebaseClient";
-import { sendTokensToUser } from "utils/token";
+} from "utils/firebase";
+import { updateTokensToDB } from "utils/token";
 import LoadingButton from "./LoadingButton";
 import SuccessPopup from "./SuccessPopup";
 import { Tweet as TweetWidget } from "react-twitter-widgets";
-import { endedQuotas, ordinemUsers, tweet_id } from "utils/earnGoldStore";
-
-type Quotas = ("Likes" | "Reply" | "")[];
+import { useQuests } from "hooks/useQuests";
 
 const Tweet = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -32,87 +29,48 @@ const Tweet = () => {
 
   const { currentUser } = useTwitterUser();
   const wallet = useAnchorWallet();
+  const walletContextState = useWallet()
+
   const { openNotification } = useNotification();
+  const { tweet_id, quotasEnded } = useQuests();
 
-  const fetchAndChangeTweet = async () => {
+  const changeTweet = async () => {
     setButtonClicked(true);
-    const users = ordinemUsers.value;
-    const index = Math.ceil(Math.random() * users.length) - 1;
-    const _user = users[index];
-
-    if (!_user) return;
-    const currentUserId = currentUser?.providerData[0].uid;
-    const currentUserData = await getCurrentUserData(currentUserId);
-    const level = calculateLevels(currentUserData.nftCount ?? 1);
-    const quotas: Quotas = [];
-    if (currentUserData.likeCount >= level) {
-      quotas.push("Likes");
-      endedQuotas.value.like = true;
-    }
-    if (currentUserData.replyCount >= level) {
-      endedQuotas.value.comment = true;
-      quotas.push("Reply");
-    }
-    if (quotas.length === 2) return;
-
-    const result = await axios.get(
-      `/api/get-twitter-random-tweet?user_id=${_user.uid}`
-    );
-    const tweetData = result.data.data;
-    if (!tweetData) {
-      fetchAndChangeTweet();
-      return;
-    }
-
-    const likeVerify = await axios.get(
-      `/api/verify-like?user_id=${currentUserId}&tweet_id=${tweetData.id_str}`
-    );
-    if (likeVerify.data.data) {
-      fetchAndChangeTweet();
-      return;
-    }
-
-    const replyVerify = await axios.get(
-      `/api/verify-reply?user_id=${currentUserId}&tweet_id=${tweetData.id_str}`
-    );
-    if (replyVerify.data.data) {
-      fetchAndChangeTweet();
-      return;
-    }
-
-    if (tweetData && tweetData.id_str) {
-      tweet_id.value = tweetData.id_str;
-
+    const changed = await fetchAndChangeTweet();
+    if (changed) {
       setIsVerified({ like: false, comment: false, retweet: false });
       setLoadTweet(true);
       setButtonClicked(false);
       setIsTweetLoading(true);
-    } else {
-      fetchAndChangeTweet();
     }
   };
 
   useEffect(() => {
-    if (wallet && currentUser && !tweet_id.value.length) {
+    if (wallet && currentUser && !tweet_id.length) {
       (async () => {
         setIsLoading(true);
-        await getRandomTweet(
-          wallet?.publicKey.toString(),
-          currentUser?.providerData[0].uid
-        );
+        try {
+          await getRandomTweet(
+            wallet?.publicKey.toString(),
+            currentUser?.providerData[0].uid
+          );
+        } catch (error) {
+          console.log(error);
+        }
         setIsLoading(false);
       })();
     }
   }, [wallet]);
 
   const sendTokens = async (quest: string, amount?: number) => {
-    const sig = await sendTokensToUser(
-      wallet?.publicKey.toString() as string,
+    if(!wallet) return;
+    const _amount =await updateTokensToDB(
+      wallet.publicKey.toString(),
       amount ?? 5
     );
 
     openNotification(() => (
-      <SuccessPopup goldRecieved={amount ?? 5} quest={quest} signature={sig} />
+      <SuccessPopup goldRecieved={_amount} quest={quest} />
     ));
   };
 
@@ -121,13 +79,13 @@ const Tweet = () => {
       setButtonClicked(true);
       const currentUserId = currentUser?.providerData[0].uid;
       const result = await axios.get(
-        `/api/verify-like?user_id=${currentUserId}&tweet_id=${tweet_id.value}`
+        `/api/verify-like?user_id=${currentUserId}&tweet_id=${tweet_id}`
       );
 
       if (result.data.data === true) {
         setIsVerified((state) => ({ ...state, like: true }));
         updateUserData({
-          likes: arrayUnion(tweet_id.value),
+          likes: arrayUnion(tweet_id),
           likeCount: increment(1),
           lastLiked: serverTimestamp(),
         });
@@ -146,13 +104,13 @@ const Tweet = () => {
       setButtonClicked(true);
       const currentUserId = currentUser?.providerData[0].uid;
       const result = await axios.get(
-        `/api/verify-reply?user_id=${currentUserId}&tweet_id=${tweet_id.value}`
+        `/api/verify-reply?user_id=${currentUserId}&tweet_id=${tweet_id}`
       );
 
       if (result.data.data === true) {
         setIsVerified((state) => ({ ...state, comment: true }));
         updateUserData({
-          replies: arrayUnion(tweet_id.value),
+          replies: arrayUnion(tweet_id),
           replyCount: increment(1),
           lastReplied: serverTimestamp(),
         });
@@ -172,14 +130,14 @@ const Tweet = () => {
 
   if (isLoading) return <div>Loading ...</div>;
 
-  if (tweet_id.value.length === 0)
+  if (tweet_id.length === 0)
     return (
       <div>
         <h5>No User found in the database that has NFT</h5>
       </div>
     );
 
-  if (endedQuotas.value.like && endedQuotas.value.comment)
+  if (quotasEnded.like && quotasEnded.comment)
     return (
       <div className="w-full h-full flex flex-col justify-center items-center text-center">
         <h4>Quotas ended for today</h4>
@@ -193,7 +151,7 @@ const Tweet = () => {
         <div className="max-h-[20rem] mb-4 overflow-x-hidden overflow-y-scroll">
           <div className="rounded-lg overflow-hidden">
             <TweetWidget
-              tweetId={tweet_id.value}
+              tweetId={tweet_id}
               onLoad={() => {
                 setIsTweetLoading(false);
                 setLoadTweet(false);
@@ -208,12 +166,12 @@ const Tweet = () => {
         )}
         {!isTweetLoading && (
           <div className="flex flex-col gap-4 justify-stretch">
-            {!endedQuotas.value.like && (
+            {!quotasEnded.like && (
               <div className="flex items-center justify-between gap-4 w-full">
                 <a
                   target="_blank"
                   rel="noreferrer"
-                  href={`https://twitter.com/intent/like?tweet_id=${tweet_id.value}`}
+                  href={`https://twitter.com/intent/like?tweet_id=${tweet_id}`}
                   className="bg-blue-400 text-white px-5 py-2 rounded-lg"
                 >
                   Like tweet
@@ -235,12 +193,12 @@ const Tweet = () => {
                 </div>
               </div>
             )}
-            {!endedQuotas.value.comment && (
+            {!quotasEnded.comment && (
               <div className="flex items-center justify-between gap-4 w-full">
                 <a
                   target="_blank"
                   rel="noreferrer"
-                  href={`https://twitter.com/intent/tweet?in_reply_to=${tweet_id.value}`}
+                  href={`https://twitter.com/intent/tweet?in_reply_to=${tweet_id}`}
                   className="bg-blue-400 text-white px-5 py-2 rounded-lg"
                 >
                   Comment tweet
@@ -268,8 +226,10 @@ const Tweet = () => {
                 buttonClicked ? "pointer-events-none cursor-not-allowed" : ""
               }`}
               text="Next"
-              onClick={fetchAndChangeTweet}
+              onClick={changeTweet}
             />
+
+
           </div>
         )}
       </div>

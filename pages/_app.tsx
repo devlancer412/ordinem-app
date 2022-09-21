@@ -23,49 +23,41 @@ import {
 import { clusterApiUrl } from "@solana/web3.js";
 import { ThemeProvider } from "next-themes";
 import { AppProps } from "next/app";
-import React, { FC, useEffect, useLayoutEffect, useMemo } from "react";
+import React, { FC, useMemo } from "react";
 import { Layout } from "../components/layouts/layout";
-import "utils/firebaseClient";
-import { useWindowSize } from "hooks/useWindowSize";
-import { useTwitterUser } from "hooks/useTwitterUser";
+import "utils/firebase";
+import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 // Use require instead of import since order matters
 require("@solana/wallet-adapter-react-ui/styles.css");
 require("../styles/globals.css");
 
 const App: FC<AppProps> = ({ Component, pageProps }) => {
-  const { setSize } = useWindowSize();
-  const { getDataFromStorage } = useTwitterUser();
-
-  const windowListener = () => {
-    setSize({
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
-  };
-
-  useLayoutEffect(() => {
-    windowListener();
-    window.addEventListener("resize", windowListener);
-    getDataFromStorage();
-
-    return () => window.removeEventListener("resize", () => {});
-  }, []);
-
   return (
     <>
       <Head>
         <title>Ordinem</title>
       </Head>
-      <Providers>
-        <Layout>
-          <div className="full-body fixed top-0 left-0 -z-40"></div>
-          <Component {...pageProps} />
-        </Layout>
-      </Providers>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <Providers>
+          <Layout>
+            <div className="full-body fixed top-0 left-0 -z-40"></div>
+            <Component {...pageProps} />
+          </Layout>
+        </Providers>
+      </ErrorBoundary>
     </>
   );
 };
+
+function ErrorFallback({ error }: FallbackProps) {
+  return (
+    <div role="alert">
+      <p>Something went wrong:</p>
+      <pre style={{ color: "red" }}>{error.message}</pre>
+    </div>
+  );
+}
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   // Can be set to 'devnet', 'testnet', or 'mainnet-beta'

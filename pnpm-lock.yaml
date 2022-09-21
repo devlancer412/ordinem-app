@@ -31,7 +31,7 @@ specifiers:
   postcss: ^8.4.14
   react: ^18.0.0
   react-dom: ^18.0.0
-  react-twitter-embed: ^4.0.4
+  react-error-boundary: ^3.1.4
   react-twitter-widgets: ^1.11.0
   shx: ^0.3.3
   tailwindcss: ^3.1.6
@@ -61,7 +61,7 @@ dependencies:
   next-themes: 0.2.0_3xcjr4wz26biff45sz3jtokgje
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
-  react-twitter-embed: 4.0.4_biqbaboplfbrettd7655fr4n2y
+  react-error-boundary: 3.1.4_react@18.2.0
   react-twitter-widgets: 1.11.0_react@18.2.0
   zustand: 4.1.1_react@18.2.0
 
@@ -7982,6 +7982,16 @@ packages:
       scheduler: 0.23.0
     dev: false
 
+  /react-error-boundary/3.1.4_react@18.2.0:
+    resolution: {integrity: sha512-uM9uPzZJTF6wRQORmSrvOIgt4lJ9MC1sNgEOj2XGsDTRE4kmpWxg7ENK9EWNKJRMAOY9z0MuF4yIfl6gp4sotA==}
+    engines: {node: '>=10', npm: '>=6'}
+    peerDependencies:
+      react: '>=16.13.1'
+    dependencies:
+      '@babel/runtime': 7.18.9
+      react: 18.2.0
+    dev: false
+
   /react-is/16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
@@ -8103,18 +8113,6 @@ packages:
       object-assign: 4.1.1
       react: 18.2.0
       react-is: 18.2.0
-    dev: false
-
-  /react-twitter-embed/4.0.4_biqbaboplfbrettd7655fr4n2y:
-    resolution: {integrity: sha512-2JIL7qF+U62zRzpsh6SZDXNI3hRNVYf5vOZ1WRcMvwKouw+xC00PuFaD0aEp2wlyGaZ+f4x2VvX+uDadFQ3HVA==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      react: ^16.0.0 || ^17.0.0 || ^18.0.0
-      react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0
-    dependencies:
-      react: 18.2.0
-      react-dom: 18.2.0_react@18.2.0
-      scriptjs: 2.5.9
     dev: false
 
   /react-twitter-widgets/1.11.0_react@18.2.0:
@@ -8456,10 +8454,6 @@ packages:
     resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}
     dependencies:
       loose-envify: 1.4.0
-    dev: false
-
-  /scriptjs/2.5.9:
-    resolution: {integrity: sha512-qGVDoreyYiP1pkQnbnFAUIS5AjenNwwQBdl7zeos9etl+hYKWahjRTfzAZZYBv5xNHx7vNKCmaLDQZ6Fr2AEXg==}
     dev: false
 
   /scrypt-js/3.0.1:

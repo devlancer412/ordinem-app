@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import { useModal } from "hooks/useModal";
 import { useTwitterUser } from "hooks/useTwitterUser";
-import { signInWithTwitterFirebase } from "utils/firebaseClient";
+import { signInWithTwitterFirebase } from "utils/firebase";
 import ModalWrapper from "./ModalWrapper";
 
 const SignInWithTwitterModal = () => {

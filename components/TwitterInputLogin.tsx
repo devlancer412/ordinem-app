@@ -7,7 +7,7 @@ import {
   getUserData,
   getUserFromAddress,
   userCollection,
-} from "utils/firebaseClient";
+} from "utils/firebase";
 
 const TwitterInputLogin = () => {
   const wallet = useAnchorWallet();
