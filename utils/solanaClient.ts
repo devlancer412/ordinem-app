@@ -25,7 +25,7 @@ export default class SolanaClient {
         {
           memcmp: {
             offset: 32, //location of our query in the account (bytes)
-            bytes: '5NJVqHANi3T2Fkk4VvnqSGthQTPc2juDv3vvpKULky5y', //our search criteria, a base58 encoded string
+            bytes: publicKey, //our search criteria, a base58 encoded string
           },
         },
       ];
