@@ -45,7 +45,7 @@ export default class SolanaClient {
         if (
           parsedAccountInfo['parsed']['info']['tokenAmount']['decimals'] != 0
         ) {
-          return;
+          continue;
         }
 
         const mintAddress: string = parsedAccountInfo['parsed']['info']['mint'];
