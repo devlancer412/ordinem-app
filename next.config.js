@@ -30,7 +30,7 @@ module.exports = withBundleAnalyzer({
     productionBrowserSourceMaps: true,
   },
   images: {
-    domains: ['ipfs.io'],
+    domains: ['ipfs.io', 'pbs.twimg.com'],
   },
   future: {
     webpack5: true,
