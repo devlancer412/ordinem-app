@@ -3,7 +3,7 @@ export const SOLANA_API_KEY =
   'eTDRzxYhOyfH7c2RMsxVtMpvrJhP510627DNUitwZgVkBGanzzG1EoFsIGu1LDdx';
 export const NETWORK = process.env.NEXT_PUBLIC_NETWORK ?? 'devnet';
 export const rpcEndpoint =
-  process.env.NEXT_RPC_ENDPOINT ??
+  process.env.NEXT_PUBLIC_RPC_ENDPOINT ??
   'https://solana-mainnet.phantom.app/YBPpkkN4g91xDiAnTE9r0RcMkjg0sKUIWvAfoFVJ';
 export const collection = 'ORD';
 

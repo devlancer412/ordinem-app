@@ -2,30 +2,9 @@ import axios from 'axios';
 import { Connection, GetProgramAccountsFilter } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
-import { NETWORK, SOLANA_API_KEY, rpcEndpoint } from './constants';
-import {
-  db,
-  getFirebaseNfts,
-  getUserFromAddress,
-  nftCollection,
-  updateUser,
-} from 'utils/firebase';
+import { rpcEndpoint } from './constants';
 import { useSolanaNfts } from 'hooks/useSolanaNfts';
-import { differenceWith } from 'lodash';
-import { addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { getTokenData } from './firebase/firebase';
-
-const axiosInstance = axios.create({
-  baseURL: 'https://solana-gateway.moralis.io',
-  headers: {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Origin, Content-Type, X-Auth-Token',
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-    'X-API-Key': SOLANA_API_KEY as string,
-  },
-});
 
 const { setTokens, setNfts } = useSolanaNfts.getState();
 
@@ -33,6 +12,7 @@ export default class SolanaClient {
   async getAllNfts(publicKey: string) {
     setNfts([]);
     try {
+      console.log(rpcEndpoint);
       const solanaConnection = new Connection(rpcEndpoint);
 
       const wallet = publicKey; //example: vines1vzrYbzLMRdu58ou5XTby4qAqVRLmqo36NKPTg
@@ -83,12 +63,6 @@ export default class SolanaClient {
     }
   }
 
-  private async getData(url: string) {
-    return await (
-      await axiosInstance.get(url)
-    ).data;
-  }
-
   async getGoldTokens(publicKey: string) {
     // const user = await getUserFromAddress(publicKey);
     // if (user && user.tokensEarned) {
@@ -104,25 +78,5 @@ export default class SolanaClient {
     // if (token) {
     //   setTokens(Number(token.amount.split('.')[0]));
     // }
-  }
-
-  async getNftTokens(publicKey: string) {
-    return this.getData(`/account/${NETWORK}/${publicKey}/nft`);
-  }
-
-  private async getNftMetadata(address: string) {
-    const metadata = await this.getData(`nft/${NETWORK}/${address}/metadata`);
-    if (
-      NETWORK !== 'devnet' &&
-      !metadata.name.toLowerCase().includes('ordinem')
-    )
-      return null;
-
-    const { data } = await axios.get(metadata?.metaplex.metadataUri);
-
-    return {
-      ...data,
-      ...metadata,
-    };
   }
 }
