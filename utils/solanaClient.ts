@@ -48,10 +48,10 @@ export default class SolanaClient {
         }
 
         const mintAddress: string = parsedAccountInfo['parsed']['info']['mint'];
-        const data = await getTokenData(mintAddress);
-        console.log(data);
+        const data = (await getTokenData(mintAddress)) as NFT;
+        data.mint = mintAddress;
         if (data) {
-          nfts.push(data as NFT);
+          nfts.push(data);
         }
       });
 

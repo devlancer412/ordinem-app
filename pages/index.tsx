@@ -8,7 +8,7 @@ import Image from 'components/Image';
 import NextImage from 'next/image';
 
 const Home: NextPage = () => {
-  const { nfts } = useSolanaNfts();
+  const nfts = useSolanaNfts((state) => state.nfts);
   const wallet = useAnchorWallet();
 
   const renderFullScreenMessage = (message: string) => (
@@ -17,7 +17,8 @@ const Home: NextPage = () => {
     </div>
   );
 
-  console.log(nfts && nfts.length > 0);
+  console.log(nfts, nfts?.length);
+
   return (
     <div>
       {(() => {
@@ -35,14 +36,9 @@ const Home: NextPage = () => {
   );
 };
 
-const checkIsGif = (image: string) => {
-  const dot = image.split('.');
-  const equal = image.split('=');
-  return equal[1] === 'gif' || dot[dot.length - 1] === 'gif';
-};
-
 const NftsComponent = () => {
-  const { nfts, tokens } = useSolanaNfts();
+  const nfts = useSolanaNfts((state) => state.nfts);
+  const tokens = useSolanaNfts((state) => state.tokens);
   const { currentUser: user } = useTwitterUser();
 
   return (

@@ -1,5 +1,5 @@
 import { useAnchorWallet } from '@solana/wallet-adapter-react';
-import { useEffect, useLayoutEffect } from 'react';
+import { useEffect } from 'react';
 import SolanaClient from 'utils/solanaClient';
 import { Header } from '../header/Header';
 import { Sidenav } from '../sidenav/Sidenav';
@@ -59,12 +59,13 @@ export const Layout: React.FC<Props> = ({ children }) => {
     });
   };
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     windowListener();
     window.addEventListener('resize', windowListener);
     getDataFromStorage();
 
     return () => window.removeEventListener('resize', () => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   try {
