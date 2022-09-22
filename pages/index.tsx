@@ -6,6 +6,7 @@ import { useTwitterUser } from 'hooks/useTwitterUser';
 import { useAnchorWallet } from '@solana/wallet-adapter-react';
 import Image from 'components/Image';
 import NextImage from 'next/image';
+import { useEffect } from 'react';
 
 const Home: NextPage = () => {
   const nfts = useSolanaNfts((state) => state.nfts);
@@ -17,7 +18,9 @@ const Home: NextPage = () => {
     </div>
   );
 
-  console.log(nfts, nfts?.length);
+  useEffect(() => {
+    console.log(nfts, nfts?.length);
+  }, [nfts, nfts?.length]);
 
   return (
     <div>

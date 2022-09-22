@@ -6,6 +6,7 @@ export const rpcEndpoint =
   process.env.NEXT_PUBLIC_RPC_ENDPOINT ??
   'https://solana-mainnet.phantom.app/YBPpkkN4g91xDiAnTE9r0RcMkjg0sKUIWvAfoFVJ';
 export const collection = 'ORD';
+export const goldMintAddress = '7Nn2wX2bKqDHEpq5xcWvUUF1QSLhtYSomRzTbbwRqc9N';
 
 export const calculateLevels = (nftCount: number) => {
   switch (nftCount) {

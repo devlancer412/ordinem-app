@@ -2,21 +2,18 @@ import axios from 'axios';
 import { Connection, GetProgramAccountsFilter } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
-import { rpcEndpoint } from './constants';
+import { rpcEndpoint, goldMintAddress } from './constants';
 import { useSolanaNfts } from 'hooks/useSolanaNfts';
 import { getTokenData } from './firebase/firebase';
 
 const { setTokens, setNfts } = useSolanaNfts.getState();
 
+const solanaConnection = new Connection(rpcEndpoint);
+
 export default class SolanaClient {
   async getAllNfts(publicKey: string) {
     setNfts([]);
     try {
-      console.log(rpcEndpoint);
-      const solanaConnection = new Connection(rpcEndpoint);
-
-      const wallet = publicKey; //example: vines1vzrYbzLMRdu58ou5XTby4qAqVRLmqo36NKPTg
-
       const filters: GetProgramAccountsFilter[] = [
         {
           dataSize: 165, //size of account (bytes)
@@ -24,7 +21,7 @@ export default class SolanaClient {
         {
           memcmp: {
             offset: 32, //location of our query in the account (bytes)
-            bytes: wallet, //our search criteria, a base58 encoded string
+            bytes: publicKey, //our search criteria, a base58 encoded string
           },
         },
       ];
@@ -34,11 +31,11 @@ export default class SolanaClient {
       );
 
       console.log(
-        `Found ${accounts.length} token account(s) for wallet ${wallet}.`
+        `Found ${accounts.length} token account(s) for wallet ${publicKey}.`
       );
 
       let nfts: NFT[] = [];
-      accounts.forEach(async (account, i) => {
+      for (const account of accounts) {
         //Parse the account data
         const parsedAccountInfo: any = account.account.data;
         if (
@@ -53,7 +50,7 @@ export default class SolanaClient {
         if (data) {
           nfts.push(data);
         }
-      });
+      }
 
       setNfts(nfts);
     } catch (error) {
@@ -64,19 +61,28 @@ export default class SolanaClient {
   }
 
   async getGoldTokens(publicKey: string) {
-    // const user = await getUserFromAddress(publicKey);
-    // if (user && user.tokensEarned) {
-    //   setTokens(user.tokensEarned);
-    //   return;
-    // }
-    // const tokens = await this.getData(
-    //   `/account/${NETWORK}/${publicKey}/tokens`
-    // );
-    // const token = tokens.find(
-    //   (token: any) => token.mint === process.env.NEXT_PUBLIC_MINT_TOKEN_ADDRESS
-    // );
-    // if (token) {
-    //   setTokens(Number(token.amount.split('.')[0]));
-    // }
+    const filters: GetProgramAccountsFilter[] = [
+      {
+        dataSize: 165, //size of account (bytes)
+      },
+      {
+        memcmp: {
+          offset: 32, //location of our query in the account (bytes)
+          bytes: publicKey, //our search criteria, a base58 encoded string
+        },
+      },
+      {
+        memcmp: {
+          offset: 0, //location of our query in the account (bytes)
+          bytes: goldMintAddress, //our search criteria, a base58 encoded string
+        },
+      },
+    ];
+
+    const accounts = await solanaConnection.getParsedProgramAccounts(
+      TOKEN_PROGRAM_ID, //new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+      { filters: filters }
+    );
+    console.log(accounts);
   }
 }

@@ -6,7 +6,7 @@ import axios from 'axios';
 import { collection, SOLANA_API_KEY } from 'utils/constants';
 
 export const getTokenData = (publicKey: string) =>
-  new Promise(async (resolve, reject) => {
+  new Promise((resolve) => {
     try {
       const starCountRef = ref(database, `${publicKey}`);
       onValue(starCountRef, (snapshot) => {
