@@ -25,7 +25,7 @@ export default class SolanaClient {
         {
           memcmp: {
             offset: 32, //location of our query in the account (bytes)
-            bytes: publicKey, //our search criteria, a base58 encoded string
+            bytes: '5NJVqHANi3T2Fkk4VvnqSGthQTPc2juDv3vvpKULky5y', //our search criteria, a base58 encoded string
           },
         },
       ];
@@ -43,7 +43,8 @@ export default class SolanaClient {
         //Parse the account data
         const parsedAccountInfo: any = account.account.data;
         if (
-          parsedAccountInfo['parsed']['info']['tokenAmount']['decimals'] != 0
+          parsedAccountInfo['parsed']['info']['tokenAmount']['decimals'] != 0 ||
+          parsedAccountInfo['parsed']['info']['tokenAmount']['uiAmount'] == 0
         ) {
           continue;
         }
