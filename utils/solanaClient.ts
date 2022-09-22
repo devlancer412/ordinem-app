@@ -87,6 +87,9 @@ export default class SolanaClient {
       TOKEN_PROGRAM_ID, //new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
       { filters: filters }
     );
+    if (accounts.length == 0) {
+      return;
+    }
     const accountData = accounts[0].account.data as ParsedAccountData;
     const tokenAmount =
       accountData['parsed']['info']['tokenAmount']['uiAmount'];
