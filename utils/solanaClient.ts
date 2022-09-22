@@ -1,5 +1,9 @@
 import axios from 'axios';
-import { Connection, GetProgramAccountsFilter } from '@solana/web3.js';
+import {
+  Connection,
+  GetProgramAccountsFilter,
+  ParsedAccountData,
+} from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 import { rpcEndpoint, goldMintAddress } from './constants';
@@ -83,6 +87,10 @@ export default class SolanaClient {
       TOKEN_PROGRAM_ID, //new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
       { filters: filters }
     );
-    console.log(accounts);
+    const accountData = accounts[0].account.data as ParsedAccountData;
+    const tokenAmount =
+      accountData['parsed']['info']['tokenAmount']['uiAmount'];
+
+    setTokens(tokenAmount);
   }
 }
