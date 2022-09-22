@@ -11,9 +11,9 @@ module.exports = withBundleAnalyzer({
       isServer = typeof window === 'undefined',
     }
   ) {
-    if (isServer) {
-      require('./scripts/generate-sitemap');
-    }
+    // if (isServer) {
+    //   require('./scripts/generate-sitemap');
+    // }
     /**
      * !dev ? preact/compat : react, react-dom on build
      * reduce page weight in production by ~10%
